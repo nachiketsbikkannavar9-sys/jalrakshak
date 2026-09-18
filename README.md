@@ -20,7 +20,7 @@ list, and an authority acknowledgement loop.
 | Live water-level telemetry | **UK Environment Agency** flood-monitoring API (real rivers in England, no key, no registration) & **USGS** Instantaneous Values (US gauges, no key) | `demo` adapter: 6 **Indian** stations (Brahmaputra at Guwahati, Ganga at Patna, Godavari at Polavaram, …) whose values are **SIMULATED** and clearly labelled "SIMULATED" in the UI. Metadata is illustrative, not official CWC bulletin data. |
 | Risk scoring | Computed **server-side** from stored readings (`services/riskEngine.ts`), reproducible, not frontend-random. Configurable per station. | — |
 | Alert dispatch | **Resend** (email) / **Twilio** (SMS) — real messages if keys are in `.env` | Without keys, alerts still fire **end-to-end** into the app's alert feed & outbox via a "console-demo" channel (stored in DB, visible in UI). |
-| Alert recipients | Configurable list in `.env` | Bangalore-free demo list, e.g. a team member playing **NDRF control room**. The app says plainly this is **not** an NDRF/NDMA integration. |
+| Alert recipients | Configurable list in `.env` | free demo list, e.g. a team member playing **NDRF control room**. The app says plainly this is **not** an NDRF/NDMA integration. |
 | Authority loop | JWT auth + `POST /api/alerts/:id/acknowledge`; ack persists (`acknowledged_at`, `acknowledged_by`) and broadcasts over WebSocket | — |
 
 **Why UK EA / USGS instead of CWC telemetry?** India-WRIS / NWDP's CKAN
