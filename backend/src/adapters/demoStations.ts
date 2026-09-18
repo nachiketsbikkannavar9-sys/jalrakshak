@@ -1,0 +1,102 @@
+import type { StationSeed } from "./types.js";
+
+/**
+ * Indian monitoring-station metadata used by the `demo` and `seed` adapters.
+ *
+ * These are real, well-known CWC monitoring locations, but the threshold
+ * figures below are ILLUSTRATIVE (hackathon stand-ins), not official CWC
+ * bulletins. Data from these stations is SIMULATED — never claim otherwise.
+ * In production this metadata would come from CWC's Flood Forecasting
+ * Network / India-WRIS via the `nwdp` adapter (real telemetry).
+ */
+export const INDIAN_STATIONS: StationSeed[] = [
+  {
+    externalId: "brahmaputra-guwahati",
+    name: "Brahmaputra at Guwahati",
+    kind: "River",
+    place: "Guwahati, Assam",
+    lat: 26.1844,
+    lng: 91.7361,
+    unit: "m",
+    region: "Assam",
+    normalLevel: 46.0,
+    warningLevel: 48.5,
+    dangerLevel: 49.5,
+    simulated: true,
+    riseNormDivisor: 0.06,
+    alertCooldownMin: 15,
+  },
+  {
+    externalId: "mahanadi-naraj",
+    name: "Mahanadi at Naraj",
+    kind: "River",
+    place: "Cuttack, Odisha",
+    lat: 20.4636,
+    lng: 85.7353,
+    unit: "m",
+    region: "Odisha",
+    normalLevel: 19.0,
+    warningLevel: 21.5,
+    dangerLevel: 22.5,
+    simulated: true,
+  },
+  {
+    externalId: "godavari-polavaram",
+    name: "Godavari at Polavaram (Dam)",
+    kind: "Dam",
+    place: "West Godavari, Andhra Pradesh",
+    lat: 17.2458,
+    lng: 81.6453,
+    unit: "m",
+    region: "Andhra Pradesh",
+    normalLevel: 37.5,
+    warningLevel: 39.5,
+    dangerLevel: 41.0,
+    simulated: true,
+    riseNormDivisor: 0.08,
+  },
+  {
+    externalId: "krishna-vijayawada",
+    name: "Krishna at Vijayawada",
+    kind: "River",
+    place: "Vijayawada, Andhra Pradesh",
+    lat: 16.5224,
+    lng: 80.6236,
+    unit: "m",
+    region: "Andhra Pradesh",
+    normalLevel: 14.5,
+    warningLevel: 16.5,
+    dangerLevel: 17.5,
+    simulated: true,
+  },
+  {
+    externalId: "ganga-patna",
+    name: "Ganga at Patna",
+    kind: "River",
+    place: "Patna, Bihar",
+    lat: 25.5941,
+    lng: 85.1376,
+    unit: "m",
+    region: "Bihar",
+    normalLevel: 46.5,
+    warningLevel: 49.0,
+    dangerLevel: 50.0,
+    simulated: true,
+  },
+  {
+    externalId: "teesta-domohani",
+    name: "Teesta at Domohani (Hill River)",
+    kind: "River",
+    place: "Jalpaiguri, West Bengal",
+    lat: 26.7597,
+    lng: 88.7414,
+    unit: "m",
+    region: "West Bengal",
+    normalLevel: 88.0,
+    warningLevel: 89.8,
+    dangerLevel: 90.5,
+    simulated: true,
+    riseNormDivisor: 0.1,
+    alertCooldownMin: 20,
+  },
+];

@@ -1,0 +1,24 @@
+{
+  "name": "jalrakshak",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Jalrakshak — flood & water-level early warning system (hackathon build)",
+  "workspaces": [
+    "backend",
+    "frontend",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:backend": "npm run dev -w backend",
+    "dev:frontend": "npm run dev -w frontend",
+    "db:setup": "npm run db:setup -w backend",
+    "build": "npm run build -w backend && npm run build -w frontend",
+    "test": "npm test -w backend && npm test -w frontend",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "vitest": "^3.2.7"
+  }
+}

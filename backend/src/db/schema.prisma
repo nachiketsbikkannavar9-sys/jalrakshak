@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A monitoring point: river gauge, dam telemetry or lake level station.
+model Station {
+  id           String    @id @default(cuid())
+  externalId   String    @unique
+  source       String    @default("seed") // ukEA | usgs | seed | demo | nwdp
+  simulated    Boolean   @default(false)
+  name         String
+  kind         String    // River | Dam | Lake
+  place        String
+  lat          Float
+  lng          Float
+  unit         String    @default("m")
+
+  // State/region the gauge monitors (Assam, Bihar, Telangana, …). Feeds the
+  // multi-agency jurisdiction model + the public "check your area" picker.
+  region       String?
+
+  normalLevel  Float
+  warningLevel Float
+  dangerLevel  Float
+
+  // per-station risk configuration (see README "Risk scoring")
+  weightProximity Int     @default(60)
+  weightRise      Int     @default(30)
+  weightRain      Int     @default(10)
+  riseNormDivisor Float   @default(0.06)
+  rainfallEnabled Boolean @default(false)
+  alertCooldownMin Int    @default(30)
+
+  readings Reading[]
+  alerts   Alert[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// One observed water level with the risk score computed at ingest time.
+model Reading {
+  id         String   @id @default(cuid())
+  stationId  String
+  station    Station  @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  level      Float
+  riskScore  Int?
+  riskCategory String? // Normal | Watch | Warning | Severe | Critical
+  rateOfRise Float?   // metres/hour at the moment this reading was ingested
+  rainfallMm  Float?  // forecast rainfall used in the score (or null)
+  observedAt DateTime
+  createdAt  DateTime @default(now())
+
+  @@unique([stationId, observedAt])
+  @@index([stationId, observedAt])
+}
+
+/// Every dispatch attempt that alertDispatcher makes (per recipient & channel).
+model Alert {
+  id             String    @id @default(cuid())
+  stationId      String
+  station        Station   @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  riskScore      Int
+  category       String
+  channel        String    // sms | email
+  sentTo         String
+  body           String
+  delivered      Boolean   @default(true)
+  deliveredVia   String?   // resend | twilio | console-demo
+  deliveryState  String?   // delivered | logged-console | failed
+  level          Float?    // station level at alert-dispatch time (context)
+  rateOfRise     Float?    // m/h at dispatch time
+  createdAt      DateTime  @default(now())
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+
+  @@index([stationId, createdAt])
+}
+
+/// Authority login (the citizen view stays public/read-only).
+model AuthorityUser {
+  id                        String   @id @default(cuid())
+  email                     String   @unique
+  passwordHash              String
+  role                      String   @default("district_officer") // district_officer | ndrf_demo | admin
+  displayName               String   @default("Authority User")
+
+  // Multi-agency jurisdiction. Empty arrays + role "admin" = national scope.
+  // Otherwise: regions/states this account can view & act on (Assam, Bihar…)
+  // plus optional explicit station ids. See shared/src/index.ts (scope helpers).
+  jurisdictionRegions       String[] @default([])
+  jurisdictionStationIds    String[] @default([])
+
+  createdAt                 DateTime @default(now())
+}
+
+/// A no-login citizen alert subscription. One row per email; the account
+/// watches a set of regions/states and/or specific stations and receives a
+/// plain-language email whenever one of them alerts.
+model EmailSubscription {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  regions          String[] @default([]) // e.g. ["Assam"]
+  stationIds       String[] @default([]) // specific stations to watch
+  unsubscribeToken String   @unique @default(cuid())
+  createdAt        DateTime @default(now())
+
+  notifications CitizenNotification[]
+}
+
+/// A citizen alert email we produced for one subscription (plain language).
+/// Kept in the DB so the "demo inbox" can show exactly what citizens received.
+model CitizenNotification {
+  id             String   @id @default(cuid())
+  subscriptionId String
+  subscription   EmailSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  stationId      String
+  level          Float
+  riskScore      Int
+  category       String
+  body           String
+  state          String   @default("logged-console") // delivered | logged-console | failed
+  sentTo         String
+  createdAt      DateTime @default(now())
+
+  @@index([subscriptionId, createdAt])
+  @@index([stationId, createdAt])
+}

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+*.log
+.env
+backend/.env
+backend/.pgdata/
+backend/src/.pgdata/
+backend/.data/
+.DS_Store
+frontend/dist/
