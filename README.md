@@ -91,7 +91,7 @@ npm run db:setup        # starts embedded Postgres 18 + creates DB + prisma db p
 npm run dev             # backend :4000 + frontend :5173
 ```
 
-Open **http://localhost:5173**.
+Open **https://flood-chi.vercel.app/**.
 
 ### Automated tests, smoke suite
 
