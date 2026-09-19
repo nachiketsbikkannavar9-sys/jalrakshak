@@ -110,13 +110,25 @@ async function run() {
   else bad("simulated flagging", "expected >=1 simulated, none flagged");
 
   // ── API: history ranges (72h backfill) -------------------------------------
+  // Anchored to WALL-CLOCK now, but telemetry freshness is bounded by the NWDP
+  // upstream's newest record (kept = last 74h of the gauge's OWN telemetry).
+  // When the upstream's newest sample is older than ~now-2d — normal for the
+  // real CWC feed — the 48h window legitimately holds one or two points, so we
+  // assert the endpoint CONTRACT, not a minimum 48h span:
+  //   · both windows return strictly time-ascending points
+  //   · the 72h window is a superset of the 48h window (≥ points)
+  //   · the 72h window carries a usable span (backfilled materialisation worked)
   if (arrah) {
     try {
       const h48 = await getJson(`/api/stations/${arrah.id}/history?hours=48`);
       const h72 = await getJson(`/api/stations/${arrah.id}/history?hours=72`);
-      const span48 = h48.points.length ? (h48.points[h48.points.length - 1].t - h48.points[0].t) / 3_600_000 : 0;
-      if (h72.points.length >= h48.points.length && span48 > 4) ok(`Arrah history ranges (48h: ${h48.points.length}pts/${span48.toFixed(1)}h, 72h: ${h72.points.length}pts)`);
-      else bad("Arrah history ranges", JSON.stringify({ n48: h48.points.length, span48, n72: h72.points.length }));
+      const span = (p) => (p.length ? (p[p.length - 1].t - p[0].t) / 3_600_000 : 0);
+      const sorted = (p) => p.every((pt, i) => i === 0 || p[i - 1].t <= pt.t);
+      const span48 = span(h48.points);
+      const span72 = span(h72.points);
+      if (h72.points.length >= h48.points.length && span72 > 4 && sorted(h48.points) && sorted(h72.points))
+        ok(`Arrah history ranges (48h: ${h48.points.length}pts/${span48.toFixed(1)}h, 72h: ${h72.points.length}pts/${span72.toFixed(1)}h)`);
+      else bad("Arrah history ranges", JSON.stringify({ n48: h48.points.length, span48, n72: h72.points.length, span72 }));
     } catch (e) {
       bad("Arrah history ranges", e.message);
     }
