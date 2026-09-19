@@ -20,5 +20,8 @@
   "devDependencies": {
     "concurrently": "^9.0.1",
     "vitest": "^3.2.7"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }
