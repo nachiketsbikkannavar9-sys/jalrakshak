@@ -216,6 +216,67 @@ async function run() {
     bad("citizen subscribe/unsubscribe", e.message);
   }
 
+  // ── API: personal flood exposure (terrain-aware, location-level) ---------
+  {
+    const rank = (s) =>
+      s.latest?.category === "Severe" ? 0
+      : s.latest?.category === "Critical" ? 1
+      : s.latest?.category === "Warning" ? 2
+      : s.latest?.category === "Watch" ? 3
+      : s.latest?.category === "Normal" ? 4 : 9;
+    const expStation = [...stations].filter((s) => s.latest).sort((a, b) => rank(a) - rank(b) || b.latest.riskScore - a.latest.riskScore)[0];
+    if (expStation) {
+      try {
+        const low = await getJson(`/api/location/exposure?lat=${expStation.lat}&lng=${expStation.lng}`);
+        const high = await getJson(`/api/location/exposure?lat=${expStation.lat + 0.04}&lng=${expStation.lng + 0.02}`, 30_000);
+        const sameNearest = !!low.nearestStation?.id && low.nearestStation.id === high.nearestStation?.id;
+        const differs = low.exposure.score !== high.exposure.score;
+        const valid = ["Normal", "Watch", "Warning", "Severe", "Critical"].includes(low.exposure.category);
+        if (sameNearest && differs && valid) {
+          ok(`personal exposure: same gauge, two points → exposure differs (${low.exposure.score} ${low.exposure.category} vs ${high.exposure.score} ${high.exposure.category} @ ${low.nearestStation.name})`);
+        } else {
+          bad("personal exposure varies by point near same gauge", JSON.stringify({ sameNearest, differs, valid, low: low.exposure.score, high: high.exposure.score }));
+        }
+        if (low.advice?.level && low.explanation?.whyThisExposure) ok("location exposure returns advice + factual explanation");
+        else bad("location exposure advice/explanation", JSON.stringify(low).slice(0, 200));
+
+        // TEST 5 — repeating the SAME location must reuse the elevation cache
+        // (rounded-coordinate key → fetched:false on the repeat; no repeated
+        // Open-Meteo network call).
+        const cached = await getJson(`/api/location/exposure?lat=${expStation.lat}&lng=${expStation.lng}`, 15_000);
+        if (cached.elevation?.fetched === false && cached.elevation.cacheKey) {
+          ok(`repeat lookups reuse the elevation cache (${cached.elevation.cacheKey})`);
+        } else {
+          bad("repeat elevation lookup hits cache (TEST 5)", JSON.stringify({ fetched: cached.elevation?.fetched, cacheKey: cached.elevation?.cacheKey }));
+        }
+
+        // FIX 1 — a gauge beyond the local-range threshold must NOT claim a
+        // headroom comparison: reduced confidence, no "water line" phrase.
+        const far = await getJson(`/api/location/exposure?lat=${expStation.lat + 5}&lng=${expStation.lng}`, 30_000);
+        const farWhy = far.explanation?.whyThisExposure ?? "";
+        const farOk =
+          far.exposure?.noNearbyGauge === true &&
+          far.exposure.confidence === "reduced" &&
+          !farWhy.includes("water line") &&
+          farWhy.includes("No monitored river or gauge within");
+        if (farOk) ok(`far gauge (${(far.distanceKm ?? 0).toFixed(0)} km) → reduced-confidence regional estimate, no headroom comparison`);
+        else bad("far gauge → reduced-confidence, no headroom", JSON.stringify({ noNearby: far.exposure?.noNearbyGauge, conf: far.exposure?.confidence, why: farWhy.slice(0, 120) }));
+
+        // FIX 2 — the demo presets must actually land in DIFFERENT risk bands.
+        const demo = await getJson("/api/location/demo", 60_000);
+        if (demo.crossedBands === true && demo.low && demo.raised && demo.low.category !== demo.raised.category) {
+          ok(`demo presets cross risk bands (${demo.low.category} ${demo.low.score} vs ${demo.raised.category} ${demo.raised.score} @ ${demo.station.name})`);
+        } else {
+          bad("demo presets cross risk bands", JSON.stringify(demo).slice(0, 300));
+        }
+      } catch (e) {
+        bad("personal exposure endpoint", e.message);
+      }
+    } else {
+      bad("personal exposure endpoint", "no station with a reading to demo against");
+    }
+  }
+
   if (!DOM) {
     console.log(`\nSMOKE RESULT: ${checks - failures}/${checks} passed, ${failures} failed`);
     process.exit(failures ? 1 : 0);
@@ -262,7 +323,7 @@ async function run() {
   // ── DOM: public view ------------------------------------------------------
   try {
     const dom = dump(`${WEB}/public`);
-    for (const t of ["What the colours mean", "River status for your district", "Get alerts by email", "CHECK YOUR AREA"]) {
+    for (const t of ["What the colours mean", "River status for your district", "Get alerts by email", "CHECK YOUR AREA", "CHECK YOUR FLOOD RISK — PERSONAL EXPOSURE"]) {
       if (dom.includes(t)) ok(`public page has "${t}"`);
       else bad(`public page has "${t}"`);
     }

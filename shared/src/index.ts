@@ -359,3 +359,6 @@ export const CATEGORY_GUIDANCE: Record<RiskCategory, { title: string; action: st
     action: "The gauge has not reported recently. Check the nearest neighbouring stations and rely on local authorities for the latest.",
   },
 };
+
+// ── Personal flood exposure (location-level, distinct from station hazard) ──
+export * from "./personalExposure.js";

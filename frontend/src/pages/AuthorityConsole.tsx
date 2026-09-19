@@ -5,6 +5,7 @@ import { isNationalScope, scopeLabel, stationInScope } from "../../../shared/src
 import { get, getAuthUser, post, setAuthUser, setToken } from "../lib/api";
 import { subscribe } from "../lib/socket";
 import { RiskBadge } from "../components/RiskBadge";
+import { CheckYourFloodRisk, type RiskPoint } from "../components/CheckYourFloodRisk";
 import { fmtDateTime, fmtRelative } from "../lib/format";
 
 export function AuthorityConsole() {
@@ -16,6 +17,7 @@ export function AuthorityConsole() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [authExPoint, setAuthExPoint] = useState<RiskPoint | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -257,6 +259,21 @@ export function AuthorityConsole() {
               Weights and the rate-of-rise divisor are configurable per station (dams vs flashy hill rivers) — see
               <code className="mono text-slate-300"> services/riskEngine.ts</code>.
             </p>
+          </div>
+
+          {/* Location exposure — read-only check (no automation, just information) */}
+          <div className="panel p-4">
+            <div className="flex items-center gap-2">
+              <h2 className="panel-head">LOCATION EXPOSURE</h2>
+              <span className="chip border bg-amber-500/10 border-amber-500/30 text-amber-300 text-[10px]">read-only assessment</span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+              Check any point's personal exposure against the nearest live gauge. Station hazard governs all alerts;
+              this is supplementary, location-level context — not automated decision-making.
+            </p>
+            <div className="mt-3">
+              <CheckYourFloodRisk stations={stations} point={authExPoint} onPointChange={setAuthExPoint} />
+            </div>
           </div>
         </div>
       </div>

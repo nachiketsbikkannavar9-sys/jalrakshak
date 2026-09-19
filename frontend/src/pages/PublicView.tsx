@@ -4,9 +4,11 @@ import type { RiskCategory, StationDTO } from "../../../shared/src/index.js";
 import { get, post } from "../lib/api";
 import { CATEGORY_ORDER, CATEGORY_META, PUBLIC_GUIDANCE } from "../lib/risk";
 import { fmtLevel, fmtRelative } from "../lib/format";
-import { MapView } from "../components/MapView";
+import { MapView, type UserPoint } from "../components/MapView";
 import { RiskBadge } from "../components/RiskBadge";
 import { SubscribePanel } from "../components/SubscribePanel";
+import { CheckYourFloodRisk } from "../components/CheckYourFloodRisk";
+import type { LocationExposureResponse } from "../lib/exposure";
 
 const ALL_CATEGORIES: RiskCategory[] = [...CATEGORY_ORDER, "No data"];
 
@@ -84,6 +86,13 @@ function CheckYourArea({ stations }: { stations: StationDTO[] }) {
 export function PublicView() {
   const [stations, setStations] = useState<StationDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userPoint, setUserPoint] = useState<UserPoint | null>(null);
+  const [userExposure, setUserExposure] = useState<LocationExposureResponse | null>(null);
+
+  const pickUserPoint = (p: UserPoint) => {
+    setUserExposure(null); // a new point invalidates the previous evaluation
+    setUserPoint(p);
+  };
 
   useEffect(() => {
     get<{ stations: StationDTO[] }>("/api/stations")
@@ -133,8 +142,19 @@ export function PublicView() {
           )}
         </div>
         <div className="h-80 border-t border-line">
-          <MapView stations={stations} />
+          <MapView
+            stations={stations}
+            userLocation={userPoint}
+            userExposure={userExposure}
+            onMapPick={(latlng) => pickUserPoint({ lat: latlng.lat, lng: latlng.lng, label: "Pin on map" })}
+          />
         </div>
+      </div>
+
+      {/* Check your flood risk — personal, location-level exposure (no login) */}
+      <div className="mt-6 panel p-4">
+        <h2 className="panel-head">CHECK YOUR FLOOD RISK — PERSONAL EXPOSURE</h2>
+        <CheckYourFloodRisk stations={stations} point={userPoint} onPointChange={pickUserPoint} onResult={setUserExposure} />
       </div>
 
       {/* Check your area — pick a state, see only your rivers (no login) */}
@@ -200,9 +220,12 @@ export function PublicView() {
 
       <p className="mt-5 text-[11px] text-slate-600 leading-relaxed max-w-3xl">
         This is a hackathon demo. Category colours come from Jalrakshak's server-side risk formula
-        (proximity to danger · 60 + rate-of-rise · 30 + rain · 10). Alerts shown to authorities are separate;
-        citizens should always follow official district/NDRF announcements. India gauges stream real
-        CWC / state-department telemetry via NWDP, as-published, with true acquisition timestamps.
+        (proximity to danger · 60 + rate-of-rise · 30 + rain · 10). Personal exposure (Normal → Critical, the same
+        category scale) is a separate,
+        location-level estimate ("how at-risk is THIS point") — modelled, not a guarantee; it never overrides the
+        station hazard, which governs all official alerts. Alerts shown to authorities are separate; citizens should
+        always follow official district/NDRF announcements. India gauges stream real CWC / state-department
+        telemetry via NWDP, as-published, with true acquisition timestamps.
       </p>
     </div>
   );

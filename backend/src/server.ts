@@ -14,6 +14,7 @@ import { router as alertsRouter } from "./routes/alerts.js";
 import { router as authRouter } from "./routes/auth.js";
 import { router as adminRouter } from "./routes/admin.js";
 import { router as subscribeRouter } from "./routes/subscribe.js";
+import { router as locationRouter } from "./routes/location.js";
 import { buildStationsDTO, nationalStats } from "./services/dto.js";
 
 async function main() {
@@ -49,6 +50,7 @@ async function main() {
   app.use("/api/auth", authRouter);
   app.use("/api/admin", adminRouter);
   app.use("/api/subscribe", subscribeRouter);
+  app.use("/api/location", locationRouter);
 
   const server = http.createServer(app);
   initIo(server);
