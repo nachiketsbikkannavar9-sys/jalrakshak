@@ -1,6 +1,7 @@
 node_modules/
 dist/
 build/
+.vercel/
 *.log
 .env
 backend/.env
@@ -9,3 +10,4 @@ backend/src/.pgdata/
 backend/.data/
 .DS_Store
 frontend/dist/
+.vercel

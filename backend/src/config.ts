@@ -68,7 +68,11 @@ export const config = {
   authorityName: str("AUTHORITY_NAME", "NDRF Control Room (Demo)"),
   authorityRole: str("AUTHORITY_ROLE", "admin"),
 
+  // Frontend origins allowed by CORS — comma-separated allow-list (Express +
+  // Socket.IO). `corsOrigin` stays a single string for building public links
+  // (e.g. the unsubscribe URL); `corsOrigins` is what the headers reflect.
   corsOrigin: str("CORS_ORIGIN", "http://localhost:5173"),
+  corsOrigins: list("CORS_ORIGIN", ["http://localhost:5173"]),
 } as const;
 
 export const isEmbeddedLocalDb = config.databaseUrl.includes("127.0.0.1:55432");

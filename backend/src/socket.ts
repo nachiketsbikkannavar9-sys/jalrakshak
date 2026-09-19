@@ -6,7 +6,7 @@ let io: Server | null = null;
 
 export function initIo(httpServer: HttpServer): Server {
   io = new Server(httpServer, {
-    cors: { origin: config.corsOrigin, methods: ["GET", "POST"] },
+    cors: { origin: config.corsOrigins, methods: ["GET", "POST"] },
   });
   io.on("connection", (socket) => {
     socket.on("app:ping", () => socket.emit("app:pong", { at: new Date().toISOString() }));
