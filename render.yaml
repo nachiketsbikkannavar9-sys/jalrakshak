@@ -1,0 +1,42 @@
+# Render Blueprint for the Jalrakshak backend (see https://render.com/docs/blueprint-spec).
+# Point DATABASE_URL at a Neon (or any hosted) Postgres; AUTO_START_PG=0 skips the
+# embedded Postgres. Frontend stays on Vercel at https://flood-chi.vercel.app.
+services:
+  - type: web
+    name: jalrakshak-api
+    runtime: node
+    plan: free
+    rootDir: /
+    buildCommand: npm ci
+    preDeployCommand: npm run db:push -w backend
+    startCommand: npm run start -w backend
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTO_START_PG
+        value: "0"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_TTL_HOURS
+        value: "72"
+      - key: CORS_ORIGIN
+        value: https://flood-chi.vercel.app
+      - key: DATA_ADAPTERS
+        value: ukEA,demo,nwdp
+      - key: POLL_INTERVAL_MIN
+        value: "2"
+      - key: STATION_REFRESH_HR
+        value: "6"
+      - key: AUTHORITY_EMAIL
+        value: ndrf@demo.local
+      - key: AUTHORITY_PASSWORD
+        value: ChangeMe123!
+      - key: AUTHORITY_NAME
+        value: NDRF Control Room (Demo)
+      - key: AUTHORITY_ROLE
+        value: admin
+      - key: PUBLIC_API_BASE
+        sync: false
